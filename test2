@@ -1,0 +1,9 @@
+Lad heltallet k være 4.
+Hvis 2 er lig med 3 gør følgende: Udfør print på 2. Og ikke mere.
+Ellers gør følgende: Udfør print på 3. Og ikke mere.
+
+Sæt k til at være k plus 1.
+Mens k er mindre end 10 gør følgende:
+Udfør print på k.
+Sæt k til at være k plus 1.
+Og ikke mere.

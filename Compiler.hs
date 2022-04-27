@@ -10,7 +10,7 @@ getP = getParent . body
 getL = getLeaf . body
 
 base :: String
-base = "section .data\n  .buf db '0000000000',10,0\n\nsection .text\n  global _start\n\n.print:\n  mov eax,[esp+4]\n  mov edi,10\n  mov ecx,10\n  mov ebx,.buf+9\n.ploop:\n  mov edx,0\n  div edi\n  add edx,48\n  mov [ebx],dl\n  dec ebx\n  loop .ploop\n  mov eax,4\n  mov ebx,1\n  mov ecx,.buf\n  mov edx,11\n  int 0x80\n  ret\n\n"
+base = "section .data\n  .buf db '0000000000',10,0\n\nsection .text\n  global _start\n\n.print:\n  mov eax,[esp+4]\n  mov edi,10\n  mov ecx,10\n  mov ebx,.buf+9\n.ploop:\n  mov edx,0\n  idiv edi\n  add edx,48\n  mov [ebx],dl\n  dec ebx\n  loop .ploop\n  mov eax,4\n  mov ebx,1\n  mov ecx,.buf\n  mov edx,11\n  int 0x80\n  ret\n\n"
 
 baseEnd :: String
 baseEnd = "  mov eax, 1\n  mov ebx, 0\n  int 0x80\n"
@@ -26,18 +26,16 @@ popStack n = do
     put (fm, vm, vs, s-n, l)
     return $ "  add esp," ++ (show $ 4*n) ++ "\n"
 
-lig :: AST -> State CState String
-lig ast = do
+comp :: String -> AST -> State CState String
+comp ins ast = do
     let [a, b] = getP ast
-    return "k"
-
-mindre :: AST -> State CState String
-mindre ast = do
-    return "k"
-
-mere :: AST -> State CState String
-mere ast = do
-    return "k"
+    codeA <- calc a
+    codeB <- calc b
+    (fm, vm, vs, s, l) <- get
+    put (fm, vm, vs, s-1, l+1)
+    let num = show l
+    return $ codeA++codeB++"  pop eax\n  cmp [esp],eax\n  "++ins++" .test"++num++
+        "\n  mov [esp],dword 0\n  jmp .end"++ num++"\n.test"++num++":\n  mov [esp],dword 1\n.end"++num++":\n"
 
 summ :: AST -> State CState String
 summ ast = do
@@ -79,15 +77,42 @@ prodCal ast = do
 calc :: AST -> State CState String
 calc ast = case dataType ast of
     "summ" -> summ ast
+    "lig" -> comp "jz" ast
+    "iLig" -> comp "jnz" ast
+    "mindre" -> comp "jl" ast
+    "større" -> comp "jg" ast
+    "mindreEL" -> comp "jle" ast
+    "størreEL" -> comp "jge" ast
     s -> return $ "; Damn " ++ s ++ "\n"
 
 hvis :: AST -> State CState String
 hvis ast = do
-    return "; \n"
+    let [testAst, ifAst, elseAst] = getP ast
+    test <- calc testAst
+    end <- popStack 1
+    (fm, vm, vs, s, l) <- get
+    put (fm, vm, []:vs, s, l+1)
+    elseCode <- sequence $ map statement $ getP elseAst
+    cleanup1 <- exitScope
+    put (fm, vm, []:vs, s, l+1)
+    ifCode <- sequence $ map statement $ getP ifAst
+    cleanup2 <- exitScope
+    let num = show l
+    return $ test ++ "  cmp [esp],dword 0\n  pop eax\n  jne .if" ++ num ++ "\n" ++ (concat elseCode) ++ cleanup1 ++
+        "  jmp .end" ++ num ++ "\n.if" ++ num ++ ":\n" ++ (concat ifCode) ++ cleanup2 ++ ".end" ++ num ++ ":\n"
 
 mens :: AST -> State CState String
 mens ast = do
-    return "; \n"
+    let [testAst, codeAst] = getP ast
+    test <- calc testAst
+    end <- popStack 1
+    (fm, vm, vs, s, l) <- get
+    put (fm, vm, []:vs, s, l+1)
+    code <- sequence $ map statement $ getP codeAst
+    cleanup <- exitScope
+    let num = show l
+    return $ " .begin" ++ num ++":\n" ++ test ++ "  cmp [esp],dword 0\n  pop eax\n  je .mens" ++ num ++ "\n" ++
+        (concat code) ++ cleanup ++ "  jmp .begin" ++ num ++ "\n.mens" ++ num ++ ":\n"
 
 element :: AST -> State CState String
 element ast = case dataType ast of
@@ -115,8 +140,23 @@ define ast = do
     let [wordAst, calcAst] = getP ast
     let varName = getL $ head $ getP wordAst
     (fm, vm, vs, s, l) <- get
+    let _ = case vm Map.!? varName of
+            Just a -> error $ "Variablen " ++ varName ++ " er allerede defineret."
+            Nothing -> 2
     put (fm, Map.insert varName (s+1) vm, (varName:(head vs)):(tail vs), s, l)
     calc calcAst
+
+setV :: AST -> State CState String
+setV ast = do
+    let [wordAst, calcAst] = getP ast
+    let varName = getL wordAst
+    (_, vm, _, s, _) <- get
+    let point = case vm Map.!? varName of
+            Nothing -> error $ "Variablen " ++ varName ++ " er ikke defineret."
+            Just a -> a
+    code <- calc calcAst
+    end <- popStack 1
+    return $ code ++ "  mov eax,[esp]\n" ++ end ++ "  mov [esp+"++(show $ 4*(s-point)) ++ "],eax\n"
 
 runProc :: Int -> AST -> State CState String
 runProc extra ast = do
@@ -150,8 +190,8 @@ exitAll = do
 returner :: AST -> State CState String
 returner ast = do
     code <- calc $ head $ getP ast
-    (_, _, _, s, _) <- get
     popStack 1
+    (_, _, _, s, _) <- get
     cleanup <- exitAll
     return $ code ++ "  pop eax\n  mov [esp+" ++ (show $ 4*s) ++ "], eax\n" ++ cleanup ++ "  ret\n"
 
@@ -174,6 +214,9 @@ statement ast = case dataType ast of
     "run void" -> runProc 1 ast
     "proc" -> proc ast
     "return" -> returner ast
+    "hvis" -> hvis ast
+    "mens" -> mens ast
+    "set" -> setV ast
     s -> return $ "; Damned " ++ s ++ "\n"
 
 sortStatements :: [String] -> (String, String)

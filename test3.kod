@@ -1,0 +1,14 @@
+Lad heltallet n være 9.
+
+Sæt n til at være n minus 1.
+Lad heltallet a være 1.
+Lad heltallet b være 1.
+
+Mens n er større end 0 gør følgende:
+	Lad heltallet c være a plus b.
+	Sæt a til at være b.
+	Sæt b til at være c.
+	Sæt n til at være n minus 1.
+	Og ikke mere.
+
+Udfør print på b.

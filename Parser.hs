@@ -44,8 +44,18 @@ typer' = map string ["et heltal", "en sandhedsværdi", "en tekst", "intet"]
 
 ---- Math ----
 
+comp :: (String, String) -> Parser
+comp (dataType, text) = setType dataType $ sequence [summ, fil text, summ]
+
 calc :: Parser
-calc = choice [summ, equalP, lessP, moreP]
+calc = choice $ map comp
+    [ ("lig", " er lig med ")
+    , ("iLig", " ikke er lig med ")
+    , ("mindre"," er mindre end ")
+    , ("større", " er større end ")
+    , ("størreEL", " er større eller lig med ")
+    , ("mindreEL", " er mindre eller lig med ")
+    ] ++ [summ]
 
 parentes :: Parser -> Parser
 parentes p = setType "parentes" $ sequence[fil "(", p, fil ")"]
@@ -74,19 +84,13 @@ sub = setType "sub" $ sequence [fil " minus ", prod]
 summ :: Parser
 summ = compact "summ" 1 . sequence [pack . prod, any $ choice [add, sub]]
 
-equalP :: Parser
-equalP = setType "equal" $ sequence [calc, fil " er lig med ", calc]
-
-lessP :: Parser
-lessP = setType "less" $ sequence [calc, fil " er mindre end ", calc]
-
-moreP :: Parser
-moreP = setType "more" $ sequence [calc, fil " er større end ", calc]
-
 --------------
 
 define :: Parser
 define = setType "define" $ sequence [fil "Lad ", choice typer, fil " være ", calc, fil "."]
+
+setV :: Parser
+setV = setType "set" $ sequence [fil "Sæt ", word, fil " til at være ", calc, fil "."]
 
 run :: Parser
 run = setType "run" $ sequence [word, fil " på ", liste calc]
@@ -95,10 +99,10 @@ runStatement :: Parser
 runStatement = compact "run void" 1 . sequence [fil "Udfør ", run, fil "."]
 
 statements :: Parser
-statements = setType "statements" $ sep (choice [runStatement, define, returner, hvis, mens]) whitespace
+statements = setType "statements" $ sep (choice [runStatement, define, hvis, mens, setV, returner]) whitespace
 
 statements' :: Parser
-statements' = setType "statements" $ sep (choice [runStatement, define, hvis, mens, proc]) whitespace
+statements' = setType "statements" $ sep (choice [runStatement, define, hvis, mens, setV, proc]) whitespace
 
 statementBlock :: Parser
 statementBlock = compact "statements" 1 . choice [sequence [statements, whitespace, fil "Og ikke mere."], pack . sequence [fil "Og ikke mere."]]
@@ -110,7 +114,7 @@ hvis :: Parser
 hvis = setType "hvis" $ sequence [fil "Hvis ", calc, fil " gør følgende:", whitespace, statementBlock, choice [ellers, setType "statements" $ sequence []]]
 
 ellers :: Parser
-ellers = compact "sequence" 1 . sequence [fil "Ellers gør følgende:", whitespace, statementBlock]
+ellers = compact "statements" 1 . sequence [whitespace, fil "Ellers gør følgende:", whitespace, statementBlock]
 
 mens :: Parser
 mens = setType "mens" $ sequence [fil "Mens ", calc, fil " gør følgende:", whitespace, statementBlock]

@@ -83,9 +83,7 @@ repeatData parser s = run s
             )
 
 sequenceData :: [Parser] -> String -> Either String ([AST], String)
-sequenceData (parser:[]) s = case parser s of
-    (Left s)    -> Left s
-    (Right res) -> if (dataType $ tree res) == "ignore" then Right ([], rest res) else Right ([tree res], rest res)
+sequenceData [] s = Right ([], s)
 sequenceData (parser:xs) s = case parser s of
     (Left s)    -> Left s
     (Right res) -> (case sequenceData xs $ rest res of

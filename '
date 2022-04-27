@@ -7,8 +7,10 @@ Udfør test på k.
 Hvis 2 er lig med 3 gør følgende: Udfør print på 2. Og ikke mere.
 Ellers gør følgende: Udfør print på 3. Og ikke mere.
 
+Udfør print på k.
 Sæt k til at være k plus 1.
-Mens k er større end 0 gør følgende:
+Udfør print på k.
+Mens k er støøre end 0 gør følgende:
 Udfør print på k.
 Sæt k til at være k minus 1.
 Og ikke mere.
