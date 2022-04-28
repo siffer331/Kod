@@ -83,6 +83,7 @@ calc ast = case dataType ast of
     "større" -> comp "jg" ast
     "mindreEL" -> comp "jle" ast
     "størreEL" -> comp "jge" ast
+    "run" -> runProc 0 ast
     s -> return $ "; Damn " ++ s ++ "\n"
 
 hvis :: AST -> State CState String

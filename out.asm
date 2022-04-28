@@ -25,55 +25,10 @@ section .text
 
 
 
-_start:  push 9
-  push dword [esp+0]
-  push 1
-  mov eax,[esp]
+_start:  push 0
+  push 2
+  call .print
   add esp,4
-  sub [esp],eax
-  mov eax,[esp]
-  add esp,4
-  mov [esp+0],eax
-  push 1
-  push 1
- .begin2:
-  push dword [esp+8]
-  push 0
-  pop eax
-  cmp [esp],eax
-  jg .test1
-  mov [esp],dword 0
-  jmp .end1
-.test1:
-  mov [esp],dword 1
-.end1:
-  cmp [esp],dword 0
-  pop eax
-  je .mens2
-  push dword [esp+4]
-  push dword [esp+4]
-  mov eax,[esp]
-  add esp,4
-  add [esp],eax
-  push dword [esp+4]
-  mov eax,[esp]
-  add esp,4
-  mov [esp+8],eax
-  push dword [esp+0]
-  mov eax,[esp]
-  add esp,4
-  mov [esp+4],eax
-  push dword [esp+12]
-  push 1
-  mov eax,[esp]
-  add esp,4
-  sub [esp],eax
-  mov eax,[esp]
-  add esp,4
-  mov [esp+12],eax
-  add esp,4
-  jmp .begin2
-.mens2:
   push 0
   push dword [esp+4]
   call .print

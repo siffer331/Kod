@@ -48,7 +48,7 @@ comp :: (String, String) -> Parser
 comp (dataType, text) = setType dataType $ sequence [summ, fil text, summ]
 
 calc :: Parser
-calc = choice $ map comp
+calc = choice $ [run] ++ map comp
     [ ("lig", " er lig med ")
     , ("iLig", " ikke er lig med ")
     , ("mindre"," er mindre end ")
@@ -64,7 +64,7 @@ tal :: Parser
 tal = setType "num" $ concat . (many $ char isDigit)
 
 element :: Parser
-element = choice [tal, word, run, parentes calc]
+element = choice [tal, word, parentes calc]
 
 mult :: Parser
 mult = setType "mult" $ sequence [fil " gange ", element]
