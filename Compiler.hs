@@ -10,7 +10,7 @@ getP = getParent . body
 getL = getLeaf . body
 
 base :: String
-base = "section .data\n  .buf db '0000000000',10,0\n\nsection .text\n  global _start\n\n.print:\n  mov eax,[esp+4]\n  mov edi,10\n  mov ecx,10\n  mov ebx,.buf+9\n.ploop:\n  mov edx,0\n  idiv edi\n  add edx,48\n  mov [ebx],dl\n  dec ebx\n  loop .ploop\n  mov eax,4\n  mov ebx,1\n  mov ecx,.buf\n  mov edx,11\n  int 0x80\n  ret\n\n"
+base = "section .data\n  .buf db '0000000000',10,0\n\nsection .text\n  global _start\n\n.udskriv:\n  mov eax,[esp+4]\n  mov edi,10\n  mov ecx,10\n  mov ebx,.buf+9\n.ploop:\n  mov edx,0\n  idiv edi\n  add edx,48\n  mov [ebx],dl\n  dec ebx\n  loop .ploop\n  mov eax,4\n  mov ebx,1\n  mov ecx,.buf\n  mov edx,11\n  int 0x80\n  ret\n\n"
 
 baseEnd :: String
 baseEnd = "  mov eax, 1\n  mov ebx, 0\n  int 0x80\n"
@@ -232,7 +232,7 @@ main = do
         let programLines = getP ast
         putStrLn $ json res ++ "\n"
 
-        let initState = (Map.fromList [("input", 0),("print", 1)], Map.empty, [[]], 0, 1) :: CState
+        let initState = (Map.fromList [("input", 0),("udskriv", 1)], Map.empty, [[]], 0, 1) :: CState
         let (res, endState) = (runState (sequence $ map statement programLines) initState) :: ([String], CState)
         let (funcs, code) = sortStatements res
         putStrLn $ funcs ++ "_start:\n" ++ code
