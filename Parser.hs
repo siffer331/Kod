@@ -1,5 +1,6 @@
 module Parser(parser) where
 import Prelude hiding (any, sequence, concat)
+import Data.Text (replace)
 import ParserGenerator
 import Data.Char
 
@@ -23,8 +24,12 @@ whitespace = ignore $ many $ char isSpace
 letter :: Parser
 letter = char isLetter
 
+convert :: String -> String
+convert [] = []
+convert (x:xs) = if x == '-' then '_':(convert xs) else x:(convert xs)
+
 word :: Parser
-word = setType "word" $ concat . sequence [letter, any $ choice [sequence [string "-", letter], letter]]
+word = transformLeaf convert . (setType "word" $ concat . sequence [letter, any $ choice [sequence [string "-", letter], letter]])
 
 sep :: Parser -> Parser -> Parser
 sep p1 p2 = compact "sep" 2 . (sequence [pack . pack . p1, any $ (sequence [p2,p1])])

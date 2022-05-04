@@ -1,6 +1,6 @@
 module ParserGenerator
 ( Body, AST, ParserData, ParserResult, Parser, getParent, getLeaf, dataType, body, tree, rest
-, json, jsonAst, isError, setType, concatResult, compactResult, pack
+, json, jsonAst, isError, setType, concatResult, compactResult, pack, transformLeaf
 , char, string
 , anyParser, manyParser, sequenceParser, choiceParser
 ) where
@@ -84,16 +84,18 @@ repeatData parser s = run s
 
 sequenceData :: [Parser] -> String -> Either String ([AST], String)
 sequenceData [] s = Right ([], s)
-sequenceData (parser:xs) s = case parser s of
-    (Left s)    -> Left s
-    (Right res) -> (case sequenceData xs $ rest res of
-            (Left s)             -> Left s
-            (Right (asts, rest)) -> if (dataType $ tree res) == "ignore" then Right (asts, rest) else Right ((tree res):asts, rest)
-            )
+sequenceData (parser:xs) s = func =<< parser s where
+        func = \res -> (\(asts, rest) -> if (dataType $ tree res) == "ignore" then (asts, rest) else ((tree res):asts, rest))
+            <$> sequenceData xs (rest res)
 
 isError :: ParserResult -> Bool
 isError (Left s) = True
 isError _ = False
+
+transformLeaf :: (String -> String) -> ParserResult -> ParserResult
+transformLeaf f parserRes = (\parserData -> case body $ tree parserData of
+        (Leaf msg) -> basic (dataType $ tree parserData) (f msg) $ rest parserData
+        b -> Right parserData) =<< parserRes
 
 changeType :: String -> ParserData -> ParserData
 changeType newType (Tree {tree = (AST {body = body}), rest = rest}) =
