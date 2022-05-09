@@ -41,10 +41,10 @@ genType :: String -> Parser
 genType s = setType s $ sequence [fil (s++" "), word]
 
 typer :: [Parser]
-typer = map genType ["heltallet", "sandhedsværdien", "teksten"]
+typer = map genType ["heltallet", "sannhetsværdien", "teksten"]
 
 typer' :: [Parser]
-typer' = map string ["et heltal", "en sandhedsværdi", "en tekst", "intet"]
+typer' = map string ["et heltall", "en sannhetsværdi", "en tekst", "ingenting"]
 
 
 ---- Math ----
@@ -54,12 +54,12 @@ comp (dataType, text) = setType dataType $ sequence [summ, fil text, summ]
 
 calc :: Parser
 calc = choice $ [run] ++ map comp
-    [ ("lig", " er lig med ")
-    , ("iLig", " ikke er lig med ")
-    , ("mindre"," er mindre end ")
-    , ("større", " er større end ")
-    , ("størreEL", " er større eller lig med ")
-    , ("mindreEL", " er mindre eller lig med ")
+    [ ("lik", " er lik ")
+    , ("ulik", " ikke er lik ")
+    , ("mindre"," er mindre enn ")
+    , ("større", " er større enn ")
+    , ("størreEL", " er større enn eller lik ")
+    , ("mindreEL", " er mindre enn eller lik ")
     ] ++ [summ]
 
 parentes :: Parser -> Parser
@@ -72,36 +72,36 @@ element :: Parser
 element = choice [tal, word, parentes calc]
 
 mult :: Parser
-mult = setType "mult" $ sequence [fil " gange ", element]
+mult = setType "mult" $ sequence [fil " ganger ", element]
 
 divi :: Parser
-divi = setType "div" $ sequence [fil " divideret med ", element]
+divi = setType "div" $ sequence [fil " delt på ", element]
 
 prod :: Parser
 prod = compact "prod" 1 . sequence [pack . element, any $ choice [mult, divi]]
 
 add :: Parser
-add = setType "add" $ sequence [fil " plus ", prod]
+add = setType "add" $ sequence [fil " pluss ", prod]
 
 sub :: Parser
 sub = setType "sub" $ sequence [fil " minus ", prod]
 
 summ :: Parser
-summ = compact "summ" 1 . sequence [pack . prod, any $ choice [add, sub]]
+summ = compact "sum" 1 . sequence [pack . prod, any $ choice [add, sub]]
 
 --------------
 
 define :: Parser
-define = setType "define" $ sequence [fil "Lad ", choice typer, fil " være ", calc, fil "."]
+define = setType "define" $ sequence [fil "La ", choice typer, fil " være ", calc, fil "."]
 
 setV :: Parser
-setV = setType "set" $ sequence [fil "Sæt ", word, fil " til at være ", calc, fil "."]
+setV = setType "set" $ sequence [fil "Sett ", word, fil " til ", calc, fil "."]
 
 run :: Parser
 run = setType "run" $ sequence [word, fil " på ", liste calc]
 
 runStatement :: Parser
-runStatement = compact "run void" 1 . sequence [fil "Udfør ", run, fil "."]
+runStatement = compact "run void" 1 . sequence [fil "Kjør ", run, fil "."]
 
 statements :: Parser
 statements = setType "statements" $ sep (choice [runStatement, define, hvis, mens, setV, returner]) whitespace
@@ -110,28 +110,28 @@ statements' :: Parser
 statements' = setType "statements" $ sep (choice [runStatement, define, hvis, mens, setV, proc]) whitespace
 
 statementBlock :: Parser
-statementBlock = compact "statements" 1 . choice [sequence [statements, whitespace, fil "Og ikke mere."], pack . sequence [fil "Og ikke mere."]]
+statementBlock = compact "statements" 1 . choice [sequence [statements, whitespace, fil "Og ikke mer."], pack . sequence [fil "Og ikke mer."]]
 
 returner :: Parser
-returner = setType "return" $ sequence [fil "Retuner ", calc, fil "."]
+returner = setType "return" $ sequence [fil "Returner ", calc, fil "."]
 
 hvis :: Parser
-hvis = setType "hvis" $ sequence [fil "Hvis ", calc, fil " gør følgende:", whitespace, statementBlock, choice [ellers, setType "statements" $ sequence []]]
+hvis = setType "hvis" $ sequence [fil "Hvis ", calc, fil " gjør følgende:", whitespace, statementBlock, choice [ellers, setType "statements" $ sequence []]]
 
 ellers :: Parser
-ellers = compact "statements" 1 . sequence [whitespace, fil "Ellers gør følgende:", whitespace, statementBlock]
+ellers = compact "statements" 1 . sequence [whitespace, fil "Ellers gjør følgende:", whitespace, statementBlock]
 
 mens :: Parser
-mens = setType "mens" $ sequence [fil "Mens ", calc, fil " gør følgende:", whitespace, statementBlock]
+mens = setType "mens" $ sequence [fil "Mens ", calc, fil " gjør følgende:", whitespace, statementBlock]
 
 proc :: Parser
 proc = setType "proc" $ sequence [
-        fil "Lad procedyren "
+        fil "La prosedyren "
         , word
-        , fil " som giver "
+        , fil " som gir "
         , choice typer'
         , fil " fra "
-        , liste $ choice (typer++[fil "intet"])
+        , liste $ choice (typer++[fil "ingenting"])
         , fil " være følgende:"
         , whitespace
         , statementBlock

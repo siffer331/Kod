@@ -10,7 +10,7 @@ getP = getParent . body
 getL = getLeaf . body
 
 base :: String
-base = "section .data\n  .buf db '0000000000',10,0\n\nsection .text\n  global _start\n\n.udskriv:\n  mov eax,[esp+4]\n  mov edi,10\n  mov ecx,10\n  mov ebx,.buf+9\n.ploop:\n  mov edx,0\n  idiv edi\n  add edx,48\n  mov [ebx],dl\n  dec ebx\n  loop .ploop\n  mov eax,4\n  mov ebx,1\n  mov ecx,.buf\n  mov edx,11\n  int 0x80\n  ret\n\n"
+base = "section .data\n  .buf db '0000000000',10,0\n\nsection .text\n  global _start\n\n.skrivut:\n  mov eax,[esp+4]\n  mov edi,10\n  mov ecx,10\n  mov ebx,.buf+9\n.ploop:\n  mov edx,0\n  idiv edi\n  add edx,48\n  mov [ebx],dl\n  dec ebx\n  loop .ploop\n  mov eax,4\n  mov ebx,1\n  mov ecx,.buf\n  mov edx,11\n  int 0x80\n  ret\n\n"
 
 baseEnd :: String
 baseEnd = "  mov eax, 1\n  mov ebx, 0\n  int 0x80\n"
@@ -76,9 +76,9 @@ prodCal ast = do
 
 calc :: AST -> State CState String
 calc ast = case dataType ast of
-    "summ" -> summ ast
-    "lig" -> comp "jz" ast
-    "iLig" -> comp "jnz" ast
+    "sum" -> summ ast
+    "lik" -> comp "jz" ast
+    "ulik" -> comp "jnz" ast
     "mindre" -> comp "jl" ast
     "større" -> comp "jg" ast
     "mindreEL" -> comp "jle" ast
@@ -134,7 +134,7 @@ word ast = do
     pushStack
     case vm Map.!? varName of
         Just a -> return $ "  push dword [esp+"++(show $ 4*(s-a))++"]\n"
-        Nothing -> error $ "Variablen " ++ varName ++ " er ikke defineret"
+        Nothing -> error $ "Variabelen " ++ varName ++ " er ikke definert"
 
 define :: AST -> State CState String
 define ast = do
@@ -142,7 +142,7 @@ define ast = do
     let varName = getL $ head $ getP wordAst
     (fm, vm, vs, s, l) <- get
     let _ = case vm Map.!? varName of
-            Just a -> error $ "Variablen " ++ varName ++ " er allerede defineret."
+            Just a -> error $ "Variabelen " ++ varName ++ " er allerede definert."
             Nothing -> 2
     put (fm, Map.insert varName (s+1) vm, (varName:(head vs)):(tail vs), s, l)
     calc calcAst
@@ -153,7 +153,7 @@ setV ast = do
     let varName = getL wordAst
     (_, vm, _, s, _) <- get
     let point = case vm Map.!? varName of
-            Nothing -> error $ "Variablen " ++ varName ++ " er ikke defineret."
+            Nothing -> error $ "Variabelen " ++ varName ++ " er ikke definert."
             Just a -> a
     code <- calc calcAst
     end <- popStack 1
@@ -168,12 +168,12 @@ runProc extra ast = do
     pushStack
     let params = case fm Map.!? funcName of
             Just x -> x
-            Nothing -> error $ "Proceduren " ++ funcName ++ " er ikke defineret"
+            Nothing -> error $ "Prosedyren " ++ funcName ++ " er ikke definert"
     if params == length inputs then do
         paramCode <- sequence $ map calc inputs
         end <- popStack $ params+extra
         return $ "  push 0\n" ++ concat paramCode ++ "  call ." ++ funcName ++ "\n" ++ end
-        else error $ "Fik ikke det rigtige antal inputs til " ++ funcName
+        else error $ "Fikk ikke riktig antall inputs til " ++ funcName
 
 exitScope :: State CState String
 exitScope = do
@@ -232,7 +232,7 @@ main = do
         let programLines = getP ast
         putStrLn $ json res ++ "\n"
 
-        let initState = (Map.fromList [("input", 0),("udskriv", 1)], Map.empty, [[]], 0, 1) :: CState
+        let initState = (Map.fromList [("input", 0),("skrivut", 1)], Map.empty, [[]], 0, 1) :: CState
         let (res, endState) = (runState (sequence $ map statement programLines) initState) :: ([String], CState)
         let (funcs, code) = sortStatements res
         putStrLn $ funcs ++ "_start:\n" ++ code
