@@ -1,15 +1,15 @@
 La heltallet k være 4.
-Utfør print på 2 plus 3 ganger (4 plus 9).
+Kjør skrivut på 2 pluss 3 ganger (4 pluss 9).
 La prosedyren test som gir ingenting fra heltallet x være følgende:
-La heltallet b være 7. Utfør print på 2. Utfør print på x. Retuner x plus 2. Og ikke mer.
-Utfør test på 17.
-Utfør test på k.
-Hvis 2 er lik 3 gjør følgende: Utfør print på 2. Og ikke mer.
-Ellers gjør følgende: Utfør print på 3. Og ikke mer.
+La heltallet b være 7. Kjør skrivut på 2. Kjør skrivut på x. Returner x pluss 2. Og ikke mer.
+Kjør test på 17.
+Kjør test på k.
+Hvis 2 er lik 3 gjør følgende: Kjør skrivut på 2. Og ikke mer.
+Ellers gjør følgende: Kjør skrivut på 3. Og ikke mer.
 
-Sett k til å være k plus 1.
+Sett k til k pluss 1.
 Mens k er større enn 0 gjør følgende:
-Utfør print på k.
-Sett k til å være k minus 1.
+Kjør skrivut på k.
+Sett k til k minus 1.
 Og ikke mer.
 
